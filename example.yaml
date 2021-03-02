@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubernetes-watcher
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubernetes-watcher
+  
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-watcher-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubernetes-watcher
+subjects:
+- kind: ServiceAccount
+  name: kubernetes-watcher
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: kubernetes-watcher
+  name: kubernetes-watcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubernetes-watcher
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: kubernetes-watcher
+    spec:
+      serviceAccount: kubernetes-watcher
+      containers:
+      - image: quay.io/edribeirojunior/kubernetes-watcher:v3
+        name: kubernetes-watcher
+        imagePullPolicy: Always
+        resources: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: kubernetes-watcher
+  name: kubernetes-watcher
+spec:
+  ports:
+  - name: app
+    port: 8090
+    protocol: TCP
+    targetPort: 8090
+  selector:
+    app: kubernetes-watcher
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kubernetes-watcher
+  namespace: default
+spec:
+  rules:
+  - host: kubernetes-watcher.{{ host-name }}
+    http:
+      paths:
+      - backend:
+          serviceName: kubernetes-watcher
+          servicePort: 8090
+        path: /
