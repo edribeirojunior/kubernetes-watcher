@@ -45,13 +45,16 @@ type PodObject struct {
 
 //RunningObject standard response for api
 type RunningObject struct {
-	Pods []PodObject `json:"pods"`
+	RunningPods int         `json:"running_pods"`
+	Pods        []PodObject `json:"pods"`
 }
 
 var runningPods RunningObject
 
 //ResourceF function to render in mux
 func ResourceF(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(runningPods)
 }
 
@@ -68,6 +71,7 @@ func main() {
 	}
 
 	var runningPodsObjects []PodObject
+	var runningPodsLen int
 
 	for {
 		// get pods in all the namespaces by omitting namespace
@@ -81,6 +85,7 @@ func main() {
 		for _, containers := range pods.Items {
 			c := containers
 			if c.Status.Phase == "Running" {
+				runningPodsLen++
 				var imageContainer []Container
 				var imageinitContainer []Container
 				for _, images := range c.Spec.Containers {
@@ -101,7 +106,7 @@ func main() {
 
 		fmt.Println("Creating runningPods object...")
 
-		runningPods = RunningObject{Pods: runningPodsObjects}
+		runningPods = RunningObject{RunningPods: runningPodsLen, Pods: runningPodsObjects}
 		fmt.Println("[INFO] Application is running")
 
 		router := mux.NewRouter()
