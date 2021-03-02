@@ -7,8 +7,10 @@ on:
     branches: [ master ]
 
 jobs:
-
   build:
+    env: 
+     registry: quay.io
+     image_name: edribeirojunior/kubernetes-watcher
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -25,8 +27,8 @@ jobs:
       uses: docker/build-push-action@v1
       with:
         path: .
-        registry: ${{ secrets.REGISTRY_URI }}
-        repository: ${{ secrets.REGISTRY_USERNAME }}/${{ secrets.REGISTRY_REPO }}
+        registry: ${{ env.registry }}
+        repository: ${{ env.image_name }}
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
         tags: "v4.0.0"
